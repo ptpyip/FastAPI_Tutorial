@@ -1,7 +1,5 @@
 # Python FastAPI Full Course
 
-Last Update: 11/02/23
-
 ## A. Course Contents
 
 ### Part I: FastAPI Basic
@@ -25,8 +23,22 @@ $ uvicorn <fileName>:<FastAPIObjName> --reload
 @app.post("/item")
 def createPost(payload: dict = Body(...)):  
     # Extract all the field from Body and covert to dict
-    return payload
+    return payload.dict()
 ```
+
+#### 4. Schema, using Pydantic
+``` python
+from typing import Optional
+from pydantic import BaseModel
+
+class Item(BaseModel):      # create a pydantic model for FastAPI Schema
+    title: str
+    content: str
+    default_val_field: bool = True
+    optional_field: Optional[int] = None
+
+```
+- Allow validation -> use Pydantic
 
 ### Part II: Database Basic
 
@@ -37,3 +49,7 @@ def createPost(payload: dict = Body(...)):
 ### Part V: Testing 
 
 ### Part VI: DevOp -- CI/CD
+
+
+
+Last Update: 12/02/23
