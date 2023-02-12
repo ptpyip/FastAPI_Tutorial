@@ -55,6 +55,24 @@ class Item(BaseModel):      # create a pydantic model for FastAPI Schema
 - Update -> PUT
 - Delete -> DELETE
 
+#### 6. Error Handling
+1. Raise an `HTTPException` 
+   ``` python
+   @app.get("/items/{id}")
+   def readItems(id: int):
+        if id >= len(posts_cache):
+            raise HTTPException(
+                status_code=404,
+                detail={
+                    "loc": ["path","id"],
+                    "msg": "item does not exists or ID our of range"
+                },           
+                header{},
+            )
+   ``` 
+
+2. Raise an exception with custom exception handlers
+
 ### Part II: Database Basic
 
 ### Part III: Backend Basic

@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, status
 
 import Schema
 
@@ -26,10 +26,20 @@ def readAllPosts():
 
 @app.get("/posts/{post_id}")
 def readPosts(post_id: int):
-    
+    if post_id >= len(posts_cache):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=[{
+                "loc": [
+                    "path",
+                    "post_id"
+                ],
+                "msg": "Post does not exists or ID our of range"
+            }],           
+        )
     return {"data": posts_cache[post_id]}
 
-@app.post("/posts")
+@app.post("/posts", status_code=status.HTTP_201_CREATED)
 def createPost(payload: Schema.Post):  
     new_id = len(posts_cache)
     new_post = {"id": new_id} | payload.dict()
