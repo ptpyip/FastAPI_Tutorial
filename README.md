@@ -42,6 +42,19 @@ class Item(BaseModel):      # create a pydantic model for FastAPI Schema
 
 - [Note](#1-schema)
 
+#### 5. CRUD Operation & RESTful API
+- Create -> POST
+-  
+- Read -> GET
+  ``` python
+  @app.get("/items/{id}")
+  def readItems(id: int):
+      return {"data": item[id]}
+
+  ``` 
+- Update -> PUT
+- Delete -> DELETE
+
 ### Part II: Database Basic
 
 ### Part III: Backend Basic
