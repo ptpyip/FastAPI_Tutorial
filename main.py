@@ -19,7 +19,15 @@ async def root():
     return {
         "message": "Hellow Wrold"
     }
-    
+
+@app.post("/posts", status_code=status.HTTP_201_CREATED)
+def createPost(payload: Schema.Post):  
+    new_id = len(posts_cache)
+    new_post = {"id": new_id} | payload.dict()
+    posts_cache.append(new_post)
+    return {"data": new_post}
+
+   
 @app.get("/posts")
 def readAllPosts():
     return {"data": posts_cache}
@@ -34,14 +42,25 @@ def readPosts(post_id: int):
                     "path",
                     "post_id"
                 ],
-                "msg": "Post does not exists or ID our of range"
+                "msg": f"Post {post_id} does not exists or ID our of range"
             }],           
         )
     return {"data": posts_cache[post_id]}
 
-@app.post("/posts", status_code=status.HTTP_201_CREATED)
-def createPost(payload: Schema.Post):  
-    new_id = len(posts_cache)
-    new_post = {"id": new_id} | payload.dict()
-    posts_cache.append(new_post)
-    return {"data": new_post}
+@app.delete("/posts/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
+def deletePosts(post_id: int):
+    if post_id >= len(posts_cache):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=[{
+                "loc": [
+                    "path",
+                    "post_id"
+                ],
+                "msg": f"Post {post_id} does not exists or ID our of range"
+            }],           
+        )
+    
+    deleted_post = posts_cache.pop(post_id)
+    return 
+
