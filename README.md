@@ -44,7 +44,11 @@ class Item(BaseModel):      # create a pydantic model for FastAPI Schema
 
 #### 5. CRUD Operation & RESTful API
 - Create -> POST
--  
+  ``` python
+  from fastapi import status
+  @app.post("/item", status_code=status.HTTP_201_CREATED)
+  ```
+
 - Read -> GET
   ``` python
   @app.get("/items/{id}")
@@ -58,6 +62,7 @@ class Item(BaseModel):      # create a pydantic model for FastAPI Schema
 #### 6. Error Handling
 1. Raise an `HTTPException` 
    ``` python
+   from fastapi import HTTPException
    @app.get("/items/{id}")
    def readItems(id: int):
         if id >= len(posts_cache):
