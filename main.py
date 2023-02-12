@@ -1,15 +1,9 @@
-from typing import Optional
-
 from fastapi import FastAPI
-from fastapi.params import Body
 
-from pydantic import BaseModel
+import Schema
 
-class Post(BaseModel):
-    title: str
-    content: str
-    published: bool = True
-    rating: Optional[int] = None
+posts_cache = []
+    
 app = FastAPI()
 
 @app.get("/")
@@ -24,7 +18,7 @@ def viewPosts():
         "data": "This is a post"
     }    
 
-@app.post("/post")
-def createPost(payload:Post):  
+@app.post("/posts")
+def createPost(payload: Schema.Post):  
     
     return payload.dict()

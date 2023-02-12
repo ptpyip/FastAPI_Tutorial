@@ -40,6 +40,8 @@ class Item(BaseModel):      # create a pydantic model for FastAPI Schema
 ```
 - Allow validation -> use Pydantic
 
+- [Note](#1-schema)
+
 ### Part II: Database Basic
 
 ### Part III: Backend Basic
@@ -50,6 +52,15 @@ class Item(BaseModel):      # create a pydantic model for FastAPI Schema
 
 ### Part VI: DevOp -- CI/CD
 
+
+## B. Peronal Notes
+### 1. Schema
+Use a seperate `/Schema` dir to store schemas
+```
+Schema/
+  __init__.py
+  Model1.py
+```
 
 
 Last Update: 12/02/23
