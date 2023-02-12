@@ -14,7 +14,7 @@ $ pip install "fastapi[all]"
 
 #### 2. The First Steps
 ``` zsh
-$ uvicorn <fileName>:<FastAPIObjName> --reload
+$ uvicorn <folder.fileName>:<FastAPIObjName> --reload
 ```
 - Start the Uvicorn server
 
