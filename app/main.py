@@ -1,3 +1,4 @@
+import psycopg
 from fastapi import FastAPI, HTTPException, status
 
 import Schema
