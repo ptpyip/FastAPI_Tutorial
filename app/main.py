@@ -31,7 +31,18 @@ def validateAndGetPost(post_id: int):
         }],           
     )
     
-
+def notFoundException(id): 
+    return HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail=[{
+            "loc": [
+                "path",
+                "post_id"
+            ],
+            "msg": f"Post with post_d={id} does not exists or ID our of range"
+        }],           
+    )
+   
 postDB = PostDB(connect_info=CONNECTION_INFO)
  
 app = FastAPI()
@@ -44,9 +55,6 @@ async def root():
 
 @app.post("/posts", status_code=status.HTTP_201_CREATED)
 def create_post(payload: Schema.Post):  
-    # new_id = len(posts_cache)
-    # new_post = {"id": new_id} | payload.dict()
-    # posts_cache.append(new_post)
     
     new_post = postDB.execute("""
         INSERT INTO "Posts" (title, is_published, content)
@@ -66,9 +74,15 @@ def read_all_posts():
 
 @app.get("/posts/{post_id}")
 def read_posts(post_id: int):
-    validateAndGetPost(post_id)
+    # validateAndGetPost(post_id)
+    post_fetched = postDB.execute("""
+        SELECT * FROM "Posts" WHERE post_id = %s
+    """, (f"{post_id}",), fetching_all=False)
     
-    return {"data": posts_cache[post_id]}
+    if not post_fetched:
+        raise notFoundException(post_id)
+    
+    return {"data": post_fetched}
 
 @app.delete("/posts/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_posts(post_id: int):
