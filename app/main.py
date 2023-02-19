@@ -97,12 +97,13 @@ def delete_posts(post_id: int):
     return 
 
 @app.put("/postLikes/{post_id}")
-def update_postLikes(post_id: int, like: bool = True):
-    post = validateAndGetPost(post_id)
-    # posts_cache[post_id] += like*1 -(not like)*1
+def update_postLikes(post_id: int, dislike: bool = False):
+    post_updated = postDB.execute("""
+        UPDATE "Posts" SET likes = likes + %s WHERE post_id = %s
+        RETURNING *;
+    """, (f"{1 - dislike*2}",f"{post_id}"), fetching_all=False)
     
-    post["likes"] += 1 if (like) else -1
+    if not post_updated:
+        raise notFoundException(post_id)
     
-    if post["likes"] < 0: 
-        post["likes"] = 0
-    return {"data": post}
+    return {"data": post_updated}
