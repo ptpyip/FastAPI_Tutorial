@@ -86,9 +86,14 @@ def read_posts(post_id: int):
 
 @app.delete("/posts/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_posts(post_id: int):
-    validateAndGetPost(post_id)
+    deleted_post = postDB.execute("""
+        DELETE FROM "Posts" WHERE post_id = %s
+        RETURNING *;
+    """, (f"{post_id}",), fetching_all=False)
     
-    deleted_post = posts_cache.pop(post_id)
+    if not deleted_post:
+        raise notFoundException(post_id)
+    
     return 
 
 @app.put("/postLikes/{post_id}")
