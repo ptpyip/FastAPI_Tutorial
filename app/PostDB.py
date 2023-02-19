@@ -1,8 +1,10 @@
 import psycopg
 
+from psycopg.rows import dict_row
 class PostDB:
-    def __init__(self, db_type='Pg') -> None:
+    def __init__(self, db_type='Pg', connect_info=None) -> None:
         self.db = db_type
+        self.connect2DB(connect_info=connect_info)
                 
     def connect2DB(self, host=None, dbname=None, user=None, pwd=None, connect_info=None):
         if self.db == 'Pg':
@@ -11,9 +13,9 @@ class PostDB:
             
             self.connect_info = connect_info
     
-    def execute(self, sql_cmd):
+    def execute(self, query, params=None):
         if self.db == 'Pg':
-            execute_success, results = executeWithPgDB(self.connect_info, sql_cmd)
+            execute_success, results = executeWithPgDB(self.connect_info, query, params)
             return results
         
 
@@ -22,7 +24,7 @@ def connect2PgDB(host=None, dbname=None, user=None, password=None, connect_info=
         connect_info = f"host={host} dbname={dbname} user={user} password={password}"
         
     try:
-        with psycopg.connect(connect_info) as conn: 
+        with psycopg.connect(connect_info, row_factory=dict_row) as conn: 
             print("success")
             return True, connect_info
     except Exception as e:
@@ -30,11 +32,11 @@ def connect2PgDB(host=None, dbname=None, user=None, password=None, connect_info=
         print(e)
         return False, None
         
-def executeWithPgDB(connect_info, cmd):
+def executeWithPgDB(connect_info, query, params=None):
     try:
-        with psycopg.connect(connect_info) as conn: 
+        with psycopg.connect(connect_info, row_factory=dict_row) as conn: 
             with conn.cursor() as cur:
-                cur.execute(cmd)
+                cur.execute(query, params)
                 conn.commit()
                 print("success")
                 return True, cur.fetchall()

@@ -1,7 +1,9 @@
-import psycopg
 from fastapi import FastAPI, HTTPException, status
 
 import Schema
+from app.PostDB import PostDB
+
+CONNECTION_INFO = "host=localhost dbname=fastapiTut user=postgres password=1234"
 
 posts_cache = [
     {
@@ -29,6 +31,9 @@ def validateAndGetPost(post_id: int):
         }],           
     )
     
+
+postDB = PostDB(connect_info=CONNECTION_INFO)
+ 
 app = FastAPI()
 
 @app.get("/")
@@ -42,12 +47,16 @@ def create_post(payload: Schema.Post):
     new_id = len(posts_cache)
     new_post = {"id": new_id} | payload.dict()
     posts_cache.append(new_post)
+    
+    
     return {"data": new_post}
 
-   
 @app.get("/posts")
 def read_all_posts():
-    return {"data": posts_cache}
+    posts = postDB.execute("""
+        SELECT * FROM "Posts"
+    """)
+    return {"data": posts}
 
 @app.get("/posts/{post_id}")
 def read_posts(post_id: int):
