@@ -37,9 +37,9 @@ def executeWithPgDB(connect_info, query, params=None, fetching_all=True):
         with psycopg.connect(connect_info, row_factory=dict_row) as conn: 
             with conn.cursor() as cur:
                 cur.execute(query, params)
-                conn.commit()
-                print("success")
                 results = cur.fetchall() if fetching_all else cur.fetchone()
+                conn.commit()   # commit changes
+                print("success")
         
         return True, results
             
