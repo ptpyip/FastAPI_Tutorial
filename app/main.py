@@ -44,12 +44,18 @@ async def root():
 
 @app.post("/posts", status_code=status.HTTP_201_CREATED)
 def create_post(payload: Schema.Post):  
-    new_id = len(posts_cache)
-    new_post = {"id": new_id} | payload.dict()
-    posts_cache.append(new_post)
+    # new_id = len(posts_cache)
+    # new_post = {"id": new_id} | payload.dict()
+    # posts_cache.append(new_post)
     
+    new_post = postDB.execute("""
+        INSERT INTO "Posts" (title, is_published, content)
+        VALUES (%s, %s, %s)
+        RETURNING *;
+    """, (payload.title, payload.is_published, payload.content)
+    )
     
-    return {"data": new_post}
+    return {"data": new_post[0]}
 
 @app.get("/posts")
 def read_all_posts():

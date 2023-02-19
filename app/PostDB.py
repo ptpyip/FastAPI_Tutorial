@@ -13,9 +13,9 @@ class PostDB:
             
             self.connect_info = connect_info
     
-    def execute(self, query, params=None):
+    def execute(self, query, params=None, fetching_all=True):
         if self.db == 'Pg':
-            execute_success, results = executeWithPgDB(self.connect_info, query, params)
+            execute_success, results = executeWithPgDB(self.connect_info, query, params, fetching_all)
             return results
         
 
@@ -32,14 +32,16 @@ def connect2PgDB(host=None, dbname=None, user=None, password=None, connect_info=
         print(e)
         return False, None
         
-def executeWithPgDB(connect_info, query, params=None):
+def executeWithPgDB(connect_info, query, params=None, fetching_all=True):
     try:
         with psycopg.connect(connect_info, row_factory=dict_row) as conn: 
             with conn.cursor() as cur:
                 cur.execute(query, params)
                 conn.commit()
                 print("success")
-                return True, cur.fetchall()
+                results = cur.fetchall() if fetching_all else cur.fetchone()
+        
+        return True, results
             
     except Exception as e:
         print("Connection Failed")
@@ -53,6 +55,7 @@ if __name__ == "__main__":
     postDB.connect2DB(connect_info="host=localhost dbname=fastapiTut user=postgres password=1234")
     posts = postDB.execute("""
         SELECT * FROM "Posts"
-    """)
+    """, fetching_all=False)
+    
     
     print(posts)
