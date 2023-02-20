@@ -101,6 +101,41 @@ class Item(BaseModel):      # create a pydantic model for FastAPI Schema
         return results
   ``` 
 
+#### 2. CRUD with DataBase
+- Create:
+  - Insert row + getting back inserted data 
+  - If return None -> error occurred.
+  ``` python
+    execute("""
+        INSERT INTO "Items" (name, content)
+        VALUES (%s, %s)
+        RETURNING *;    
+    """, (payload.name, payload.is_publicontentshed))
+  ```
+
+- Read -> GET
+  ``` python
+    execute("""
+        SELECT * FROM "Items" WHERE id = %s
+    """, (f"{id}",))
+  ``` 
+
+- Update -> PUT
+  ``` python
+    execute("""
+        UPDATE "Items" SET quantity = quantity + %s WHERE id = %s
+        RETURNING *;
+    """, (f"{-1}",f"{id}"))
+  ``` 
+
+- Delete -> DELETE
+  ``` python
+    execute("""
+        DELETE FROM "Items" WHERE id = %s
+        RETURNING *;
+    """, (f"{id}",))
+  ``` 
+
 ### Part III: Backend Basic
 
 ### Part IV: Deployment -- Microservices
