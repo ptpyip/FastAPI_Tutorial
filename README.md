@@ -78,7 +78,28 @@ class Item(BaseModel):      # create a pydantic model for FastAPI Schema
 
 2. Raise an exception with custom exception handlers
 
-### Part II: Database Basic
+### Part II: Database in Python
+#### 1. Connect to Postgres DB 
+- Use psycopg3 lib
+- How to use:
+  ``` python
+    import psycopg      # psycopg3
+    from psycopg.rows import dict_row       # dict_row allows return data as dict
+
+    def retriveData(connect_info, query, params=None, fetching_all=True) -> list:
+        with psycopg.connect(connect_info, row_factory=dict_row) as conn:   
+            with conn.cursor() as cur:
+                cur.execute(query, params)
+
+                if fetching_all:
+                    results = cur.fetchall() 
+                else:
+                    results = cur.fetchone()
+
+                conn.commit()  
+        
+        return results
+  ``` 
 
 ### Part III: Backend Basic
 
