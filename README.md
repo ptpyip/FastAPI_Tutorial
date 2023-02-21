@@ -76,6 +76,8 @@ class Item(BaseModel):      # create a pydantic model for FastAPI Schema
             )
    ``` 
 
+  #### 7. Dependency Injection
+
 2. Raise an exception with custom exception handlers
 
 ### Part II: Database in Python
@@ -146,30 +148,18 @@ class Item(BaseModel):      # create a pydantic model for FastAPI Schema
     -> define table as Python models 
     -> more readable query
 
-#### 4. Set up SQLAlchemy
-```python
-    def getPostgresURL(dbms, postgresserver, dbname, user, pwd):
-        return f"{dbms}://{user}:{pwd}@{postgresserver}/{dbname}"
-
-    def main():
-        engine = create_engine(
-            url=FASTAPI_TUT_DATABASE_URL, echo=True
-        )
-        
-        SessionLocal = sessionmaker(engine, autoflush=False,autobegin=False)
-        Base = declarative_base()
-```
-
-#### 5. Declare Models
+#### 4. Declare Models
 ``` python
     from typing import List, Optional
     from sqlalchemy import String, ForeignKey
     from sqlalchemy.orm import Mapped, mapped_column
+    from sqlalchemy.orm import DeclarativeBase
 
-    import Models.Base as Base
+    class Base(DeclarativeBase):
+        pass
 
     class Item(Base):
-        __tablename__ = "Items"
+        __tablename__ = "Items" 
 
         id: Mapped[int] = mapped_column(primary_key=True)
         name: Mapped[str]
@@ -180,6 +170,71 @@ class Item(BaseModel):      # create a pydantic model for FastAPI Schema
             return f"Item(id={self.id!r}, name={self.name!r})"
 
 ```
+#### 5. Set up SQLAlchemy
+```python
+    import models 
+
+    def getPostgresURL(dbms, postgresserver, dbname, user, pwd):
+        return f"{dbms}://{user}:{pwd}@{postgresserver}/{dbname}"
+
+    def main():
+        engine = create_engine(
+            url=FASTAPI_TUT_DATABASE_URL, echo=True
+        )
+        models.Base.metadata.create_all(engine)
+        SessionLocal = sessionmaker(engine, autoflush=False,autobegin=False)
+```
+
+### 6. Query on SQLAlchemy 
+``` python
+    db = SessionLocal()
+    db.begin()
+
+    results = db.execute(
+            select(models.Item)
+        ).mappings()
+        return {"data": [result['Item'] for result in results.all()]}
+```
+
+### 7. SQLAlchemy in Fast API 
+- require Dependency Injection
+- function as dependencies:
+  ``` python
+      def get_db():
+          db = SessionLocal()
+          try:
+              yield db
+          finally:
+              db.close()
+
+      def read_items(db: Session = Depends(get_db)):
+        ...
+  ```
+- class as dependencies:
+  ``` python
+      class Connection():
+    
+          def __init__(self) -> None:
+              engine = create_engine(
+                  url=FASTAPI_TUT_DATABASE_URL, echo=True
+              )
+              
+              models.Base.metadata.create_all(engine)
+              
+              self.SessionLocal = sessionmaker(engine, autoflush=False,autobegin=False)
+          
+          def __call__(self):
+              db = self.SessionLocal()
+              db.begin()
+              try:
+                  yield db
+              finally:
+                  db.close()
+
+      connection = Connection()
+      def read_items(db: Session = Depends(connection)):
+        ...
+  ```
 
 
 ### Part III: Backend Basic
