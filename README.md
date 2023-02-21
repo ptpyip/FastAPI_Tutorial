@@ -160,6 +160,27 @@ class Item(BaseModel):      # create a pydantic model for FastAPI Schema
         Base = declarative_base()
 ```
 
+#### 5. Declare Models
+``` python
+    from typing import List, Optional
+    from sqlalchemy import String, ForeignKey
+    from sqlalchemy.orm import Mapped, mapped_column
+
+    import Models.Base as Base
+
+    class Item(Base):
+        __tablename__ = "Items"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        name: Mapped[str]
+        default_val_field: Mapped[bool] = mapped_column(default=True)\
+        optional_field: Mapped[Optional[str]]
+        
+        def __repr__(self) -> str:
+            return f"Item(id={self.id!r}, name={self.name!r})"
+
+```
+
 
 ### Part III: Backend Basic
 
