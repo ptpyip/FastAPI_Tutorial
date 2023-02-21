@@ -1,7 +1,10 @@
 from fastapi import FastAPI, HTTPException, status
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
-import Schema
-from app.PostDB import PostDB
+import schemas
+import models
+from app import database
 
 CONNECTION_INFO = "host=localhost dbname=fastapiTut user=postgres password=1234"
 
@@ -43,18 +46,19 @@ def notFoundException(id):
         }],           
     )
    
-postDB = PostDB(connect_info=CONNECTION_INFO)
+postDB = database.connect()
+
+db = database.connect()
+db.begin()
  
 app = FastAPI()
 
 @app.get("/")
 async def root():
-    return {
-        "message": "Hellow Wrold"
-    }
+    return {"message": "Hi!"}
 
 @app.post("/posts", status_code=status.HTTP_201_CREATED)
-def create_post(payload: Schema.Post):  
+def create_post(payload: schemas.Post):  
     
     new_post = postDB.execute("""
         INSERT INTO "Posts" (title, is_published, content)
@@ -67,10 +71,17 @@ def create_post(payload: Schema.Post):
 
 @app.get("/posts")
 def read_all_posts():
-    posts = postDB.execute("""
-        SELECT * FROM "Posts"
-    """)
-    return {"data": posts}
+    
+    # posts = postDB.execute("""
+    #     SELECT * FROM "Posts"
+    # """)
+    # return {"data": posts}
+    
+    results = db.execute(
+        select(models.Post)
+    ).mappings()
+    return {"data": [result['Post'] for result in results.all()]}
+    
 
 @app.get("/posts/{post_id}")
 def read_posts(post_id: int):
@@ -107,3 +118,11 @@ def update_postLikes(post_id: int, dislike: bool = False):
         raise notFoundException(post_id)
     
     return {"data": post_updated}
+
+
+def main():
+    posts = db.execute(
+        select(models.Post)
+    )
+    # print(posts.mappings().all())
+    return posts.mappings().all()
