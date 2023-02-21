@@ -136,6 +136,17 @@ class Item(BaseModel):      # create a pydantic model for FastAPI Schema
     """, (f"{id}",))
   ``` 
 
+#### 3. Intro to ORM
+- ORM: Object Relation Mapping
+  -> ABS layer between code and db
+  -> Translate code to SQL and communicate with db.
+- Benefits:
+  - No SQL!
+  - Fully use Python 
+    -> define table as Python models 
+    -> more readable query
+    
+
 ### Part III: Backend Basic
 
 ### Part IV: Deployment -- Microservices
