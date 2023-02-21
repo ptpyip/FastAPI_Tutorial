@@ -145,7 +145,21 @@ class Item(BaseModel):      # create a pydantic model for FastAPI Schema
   - Fully use Python 
     -> define table as Python models 
     -> more readable query
-    
+
+#### 4. Set up SQLAlchemy
+```python
+    def getPostgresURL(dbms, postgresserver, dbname, user, pwd):
+        return f"{dbms}://{user}:{pwd}@{postgresserver}/{dbname}"
+
+    def main():
+        engine = create_engine(
+            url=FASTAPI_TUT_DATABASE_URL, echo=True
+        )
+        
+        SessionLocal = sessionmaker(engine, autoflush=False,autobegin=False)
+        Base = declarative_base()
+```
+
 
 ### Part III: Backend Basic
 
