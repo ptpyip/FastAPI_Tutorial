@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, Depends, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -46,10 +46,11 @@ def notFoundException(id):
         }],           
     )
    
-postDB = database.connect()
+postDB = database.setConnection()
+connection =  database.Connection()
 
-db = database.connect()
-db.begin()
+# db = database.connect()
+# db.begin()
  
 app = FastAPI()
 
@@ -70,7 +71,7 @@ def create_post(payload: schemas.Post):
     return {"data": new_post[0]}
 
 @app.get("/posts")
-def read_all_posts():
+def read_all_posts(db: Session = Depends(connection)):
     
     # posts = postDB.execute("""
     #     SELECT * FROM "Posts"
@@ -120,7 +121,7 @@ def update_postLikes(post_id: int, dislike: bool = False):
     return {"data": post_updated}
 
 
-def main():
+def main(db:Session = Depends(connection)):
     posts = db.execute(
         select(models.Post)
     )

@@ -5,7 +5,7 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-import models as models
+import models
 
 from psycopg.rows import dict_row
 
@@ -38,6 +38,28 @@ class PostgresDB:
             print("Connection Failed")
             print(e)
             return None
+ 
+class Connection():
+    
+    def __init__(self) -> None:
+        if not USE_ORM: 
+            return PostgresDB(connect_url=FASTAPI_TUT_DATABASE_URL)
+        engine = create_engine(
+            url=FASTAPI_TUT_DATABASE_URL, echo=True
+        )
+        
+        models.Base.metadata.create_all(engine)
+        
+        self.SessionLocal = sessionmaker(engine, autoflush=False,autobegin=False)
+    
+    def __call__(self):
+        db = self.SessionLocal()
+        db.begin()
+        try:
+            yield db
+        finally:
+            db.close()
+          
     
 def testConnection(connect_url):  
     try:
@@ -48,7 +70,7 @@ def testConnection(connect_url):
         print(e)
         return None
 
-def connect():
+def setConnection():
     if not USE_ORM: 
         return PostgresDB(connect_url=FASTAPI_TUT_DATABASE_URL)
     engine = create_engine(
@@ -58,10 +80,11 @@ def connect():
     models.Base.metadata.create_all(engine)
     
     SessionLocal = sessionmaker(engine, autoflush=False,autobegin=False)
-    return SessionLocal()
+    
+    return SessionLocal
 
 if __name__ == "__main__":
-    db = connect()
+    db = setConnection()
     # posts = db.execute("""
     #     SELECT * FROM "Posts"
     # """, fetching_all=False)
