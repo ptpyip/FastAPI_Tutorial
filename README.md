@@ -163,8 +163,9 @@ class Item(BaseModel):      # create a pydantic model for FastAPI Schema
 
         id: Mapped[int] = mapped_column(primary_key=True)
         name: Mapped[str]
-        default_val_field: Mapped[bool] = mapped_column(default=True)\
-        optional_field: Mapped[Optional[str]]
+        created_at = Column(types.TIMESTAMP(timezone=True), nullable=False, server_default=func.current_timestamp())
+        default_val_field: Mapped[bool] = mapped_column(server_default=True)\
+        optional_field: Mapped[Optional[str]]       # Optional -> implies nullable
         
         def __repr__(self) -> str:
             return f"Item(id={self.id!r}, name={self.name!r})"
@@ -235,6 +236,42 @@ class Item(BaseModel):      # create a pydantic model for FastAPI Schema
       def read_items(db: Session = Depends(connection)):
         ...
   ```
+#### 8. CRUD with SQLAlchemy
+- Create:
+  - Insert row + getting back inserted data 
+  - If return None -> error occurred.
+  ``` python
+    def create_item(payload: schemas.Item, db: Session = Depends(connection)):  
+      results = db.execute(
+          insert(models.Item).returning(models.Item),
+          [payload.dict()]
+      ).mappings()
+      db.commit()
+      return {"data":[result['Post'] for result in results.all()]}
+  ```
+
+- Read -> GET
+  ``` python
+    execute("""
+        SELECT * FROM "Items" WHERE id = %s
+    """, (f"{id}",))
+  ``` 
+
+- Update -> PUT
+  ``` python
+    execute("""
+        UPDATE "Items" SET quantity = quantity + %s WHERE id = %s
+        RETURNING *;
+    """, (f"{-1}",f"{id}"))
+  ``` 
+
+- Delete -> DELETE
+  ``` python
+    execute("""
+        DELETE FROM "Items" WHERE id = %s
+        RETURNING *;
+    """, (f"{id}",))
+  ``` 
 
 
 ### Part III: Backend Basic

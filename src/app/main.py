@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException, Depends, status
-from sqlalchemy import select
+from sqlalchemy import select, insert
 from sqlalchemy.orm import Session
 
 import schemas
@@ -59,28 +59,26 @@ async def root():
     return {"message": "Hi!"}
 
 @app.post("/posts", status_code=status.HTTP_201_CREATED)
-def create_post(payload: schemas.Post):  
+def create_post(payload: schemas.Post, db: Session = Depends(connection)):  
     
-    new_post = postDB.execute("""
-        INSERT INTO "Posts" (title, is_published, content)
-        VALUES (%s, %s, %s)
-        RETURNING *;
-    """, (payload.title, payload.is_published, payload.content)
-    )
-    
-    return {"data": new_post[0]}
+    # new_post = models.Post(
+    #     title=payload.title, 
+    #     is_published=payload.is_published, 
+    #     content=payload.content
+    # )
+    results = db.execute(
+        insert(models.Post).returning(models.Post),
+        [payload.dict()]
+    ).mappings()
+    db.commit()
+    return {"data":[result['Post'] for result in results.all()]}
 
 @app.get("/posts")
 def read_all_posts(db: Session = Depends(connection)):
-    
-    # posts = postDB.execute("""
-    #     SELECT * FROM "Posts"
-    # """)
-    # return {"data": posts}
-    
     results = db.execute(
         select(models.Post)
     ).mappings()
+    
     return {"data": [result['Post'] for result in results.all()]}
     
 
