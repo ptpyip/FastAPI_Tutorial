@@ -1,3 +1,5 @@
+from typing import List
+
 from fastapi import FastAPI, HTTPException, Depends, status
 from sqlalchemy import select, insert, update, delete
 from sqlalchemy.orm import Session
@@ -5,35 +7,7 @@ from sqlalchemy.orm import Session
 import schemas
 import models
 from app import database, crud
-
-CONNECTION_INFO = "host=localhost dbname=fastapiTut user=postgres password=1234"
-
-posts_cache = [
-    {
-        "id": 0,
-        "title": "Testing post",
-        "content": "This is a post for testing purposes",
-        "published": True,
-        "likes": 0
-    }
-]
-
-def validateAndGetPost(post_id: int):
-    # print(post_id)
-    if (post_id < len(posts_cache)) or post_id >= 0: 
-        return posts_cache[post_id]
-    
-    raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail=[{
-            "loc": [
-                "path",
-                "post_id"
-            ],
-            "msg": f"Post {post_id} does not exists or ID our of range"
-        }],           
-    )
-    
+ 
 def notFoundException(id): 
     return HTTPException(
         status_code=status.HTTP_404_NOT_FOUND,
@@ -46,19 +20,16 @@ def notFoundException(id):
         }],           
     )
    
-postDB = database.setConnection()
 connection =  database.Connection()
 
-# db = database.connect()
-# db.begin()
- 
 app = FastAPI()
 
 @app.get("/")
 async def root():
     return {"message": "Hi!"}
 
-@app.post("/posts", status_code=status.HTTP_201_CREATED)
+@app.post("/posts", 
+          status_code=status.HTTP_201_CREATED, response_model=schemas.PostResponse)
 def create_post(payload: schemas.Post, db: Session = Depends(connection)):  
     
     result = crud.createItem(
@@ -73,9 +44,9 @@ def create_post(payload: schemas.Post, db: Session = Depends(connection)):
             }],           
         )
         
-    return {"data":[result]}
+    return result
 
-@app.get("/posts")
+@app.get("/posts", response_model=List[schemas.PostResponse])
 def read_all_posts(db: Session = Depends(connection)):
     results = crud.readAllItem(table=models.Post, session=db)
     
