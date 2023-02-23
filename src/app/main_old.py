@@ -1,3 +1,5 @@
+from pydantic import BaseModel
+
 from fastapi import FastAPI, HTTPException, Depends, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -58,8 +60,9 @@ app = FastAPI()
 async def root():
     return {"message": "Hi!"}
 
+
 @app.post("/posts", status_code=status.HTTP_201_CREATED)
-def create_post(payload: schemas.Post):  
+def create_post(payload: schemas.Post): 
     
     new_post = postDB.execute("""
         INSERT INTO "Posts" (title, is_published, content)

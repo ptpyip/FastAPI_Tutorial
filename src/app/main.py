@@ -1,10 +1,10 @@
 from fastapi import FastAPI, HTTPException, Depends, status
-from sqlalchemy import select, insert
+from sqlalchemy import select, insert, update, delete
 from sqlalchemy.orm import Session
 
 import schemas
 import models
-from app import database
+from app import database, crud
 
 CONNECTION_INFO = "host=localhost dbname=fastapiTut user=postgres password=1234"
 
@@ -61,45 +61,51 @@ async def root():
 @app.post("/posts", status_code=status.HTTP_201_CREATED)
 def create_post(payload: schemas.Post, db: Session = Depends(connection)):  
     
-    # new_post = models.Post(
-    #     title=payload.title, 
-    #     is_published=payload.is_published, 
-    #     content=payload.content
-    # )
-    results = db.execute(
-        insert(models.Post).returning(models.Post),
-        [payload.dict()]
-    ).mappings()
-    db.commit()
-    return {"data":[result['Post'] for result in results.all()]}
+    result = crud.createItem(
+        table=models.Post,item=payload,session=db
+    )
+    
+    if not result:
+        return HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=[{
+                "msg": f"Post creation fail"
+            }],           
+        )
+        
+    return {"data":[result]}
 
 @app.get("/posts")
 def read_all_posts(db: Session = Depends(connection)):
-    results = db.execute(
-        select(models.Post)
-    ).mappings()
+    results = crud.readAllItem(table=models.Post, session=db)
     
-    return {"data": [result['Post'] for result in results.all()]}
+    if not results:
+        return HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=[{
+            "msg": f"No post exist",
+            "data": results
+        }],           
+        )
+    return {"data": results}
     
-
 @app.get("/posts/{post_id}")
-def read_posts(post_id: int):
+def read_posts(post_id: int, db: Session = Depends(connection)):
     # validateAndGetPost(post_id)
-    post_fetched = postDB.execute("""
-        SELECT * FROM "Posts" WHERE post_id = %s
-    """, (f"{post_id}",), fetching_all=False)
+    results = crud.readItemById(
+        table=models.Post,item_id=post_id, session=db
+    )
     
-    if not post_fetched:
+    if not results:
         raise notFoundException(post_id)
     
-    return {"data": post_fetched}
+    return {"data": results}
 
 @app.delete("/posts/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_posts(post_id: int):
-    deleted_post = postDB.execute("""
-        DELETE FROM "Posts" WHERE post_id = %s
-        RETURNING *;
-    """, (f"{post_id}",), fetching_all=False)
+def delete_posts(post_id: int, db: Session = Depends(connection)):
+    deleted_post = crud.deleteItemById(
+        table=models.Post,item_id=post_id, session=db
+    )
     
     if not deleted_post:
         raise notFoundException(post_id)
@@ -107,21 +113,25 @@ def delete_posts(post_id: int):
     return 
 
 @app.put("/postLikes/{post_id}")
-def update_postLikes(post_id: int, dislike: bool = False):
-    post_updated = postDB.execute("""
-        UPDATE "Posts" SET likes = likes + %s WHERE post_id = %s
-        RETURNING *;
-    """, (f"{1 - dislike*2}",f"{post_id}"), fetching_all=False)
-    
-    if not post_updated:
+def update_postLikes(post_id: int, dislike: bool = False, db: Session = Depends(connection)):
+    results = crud.updateItemById(**{
+        "table": models.Post,
+        "item_id": post_id,
+        "set_values": {
+            "likes": models.Post.likes + (1 - dislike*2)
+        }
+    }, session=db)
+
+    if not results:
         raise notFoundException(post_id)
-    
-    return {"data": post_updated}
+
+    return {"data": [results]}
 
 
 def main(db:Session = Depends(connection)):
-    posts = db.execute(
-        select(models.Post)
-    )
-    # print(posts.mappings().all())
-    return posts.mappings().all()
+    # posts = db.execute(
+    #     select(models.Post)
+    # )
+    # # print(posts.mappings().all())
+    # return posts.mappings().all()
+    ...

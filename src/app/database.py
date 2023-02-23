@@ -16,7 +16,7 @@ def getPostgresURL(dbms, postgresserver, dbname, user, pwd):
     return f"{dbms}://{user}:{pwd}@{postgresserver}/{dbname}"
 
 class PostgresDB:
-    connect_url:str
+    connect_url:str 
     
     def __init__(self, connect_url) -> None:
         self.connect_url = testConnection(connect_url=connect_url)
@@ -48,17 +48,21 @@ class Connection():
             url=FASTAPI_TUT_DATABASE_URL, echo=True
         )
         
-        models.Base.metadata.create_all(engine)
+        models.BaseModel.metadata.create_all(engine)
         
-        self.SessionLocal = sessionmaker(engine, autoflush=False,autobegin=False)
+        self.SessionLocal = sessionmaker(engine, autobegin=False)
     
     def __call__(self):
-        db = self.SessionLocal()
-        db.begin()
-        try:
-            yield db
-        finally:
-            db.close()
+        # db = self.SessionLocal()
+        # db.begin()
+        # try:
+        #     yield db
+        # finally:
+        #     db.commit()
+        #     db.close()
+        with self.SessionLocal() as db:
+            with db.begin():
+                yield db
           
     
 def testConnection(connect_url):  
@@ -77,7 +81,7 @@ def setConnection():
         url=FASTAPI_TUT_DATABASE_URL, echo=True
     )
     
-    models.Base.metadata.create_all(engine)
+    models.BaseModel.metadata.create_all(engine)
     
     SessionLocal = sessionmaker(engine, autoflush=False,autobegin=False)
     
