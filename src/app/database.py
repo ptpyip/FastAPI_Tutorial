@@ -1,99 +1,158 @@
 
+from typing import Any, Optional, Sequence
+
 import psycopg
-
-from sqlalchemy import create_engine, select
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-
-import models
-
+from psycopg import Cursor
 from psycopg.rows import dict_row
 
-FASTAPI_TUT_DATABASE_URL = "postgresql://postgres:1234@localhost/fastapiTut"
-USE_ORM = True
+from sqlalchemy import create_engine
+from sqlalchemy import text, select, insert, update, delete
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import Session, sessionmaker
+
+from config import USE_ORM
+from schemas import BaseSchema
+from models import BaseModel
+
 
 def getPostgresURL(dbms, postgresserver, dbname, user, pwd):
     return f"{dbms}://{user}:{pwd}@{postgresserver}/{dbname}"
 
-class PostgresDB:
-    connect_url:str 
-    
-    def __init__(self, connect_url) -> None:
-        self.connect_url = testConnection(connect_url=connect_url)
-        if (self.connect_url == None): raise Exception
-                
-    
-    def execute(self, query, params=None, fetching_all=True):
-        try:
-            with psycopg.connect(self.connect_url, row_factory=dict_row) as conn: 
-                with conn.cursor() as cur:
-                    cur.execute(query, params)
-                    results = cur.fetchall() if fetching_all else cur.fetchone()
-                    conn.commit()   # commit changes
-                    print("success")
-            
-            return results
-                
-        except Exception as e:
-            print("Connection Failed")
-            print(e)
-            return None
- 
 class Connection():
     
-    def __init__(self) -> None:
-        if not USE_ORM: 
-            return PostgresDB(connect_url=FASTAPI_TUT_DATABASE_URL)
+    def __init__(self, db_url, use_orm=USE_ORM) -> None:
+        if not use_orm: 
+            return
+        
         engine = create_engine(
-            url=FASTAPI_TUT_DATABASE_URL, echo=True
+            url=db_url, echo=True
         )
         
-        models.BaseModel.metadata.create_all(engine)
+        BaseModel.metadata.create_all(engine)
         
         self.SessionLocal = sessionmaker(engine, autobegin=False)
     
     def __call__(self):
-        # db = self.SessionLocal()
-        # db.begin()
-        # try:
-        #     yield db
-        # finally:
-        #     db.commit()
-        #     db.close()
         with self.SessionLocal() as db:
             with db.begin():
                 yield db
-          
+                
+class DeirectConnection(Connection):
+    connect_url:str 
     
-def testConnection(connect_url):  
+    def __init__(self, db_url) -> None:
+        super().__init__(db_url, use_orm=False)
+        self.db_url = self.testConnection(connect_url=db_url)
+        
+        if (self.connect_url == None): 
+            raise Exception
+         
+    def __call__(self):
+        with psycopg.connect(self.db_url, row_factory=dict_row) as conn: 
+                with conn.cursor() as cur:
+                    yield cur     
+              
+    def testConnection(connect_url):  
+        try:
+            with psycopg.connect(connect_url, row_factory=dict_row) as conn: 
+                return connect_url
+        except Exception as e:
+            print("Connection Failed")
+            print(e)
+            return None
+        
+
+def execute(db: Session | Cursor, query, params=Optional[dict], fetching_all=True):
     try:
-        with psycopg.connect(connect_url, row_factory=dict_row) as conn: 
-            return connect_url
+        if isinstance(db, Cursor):
+            db.execute(query, tuple(params.values()))
+            results = db.fetchall() if fetching_all else db.fetchone()
+            
+            return results
+        
+        elif isinstance(db, Session):
+            reeults = db.execute(text(query).bindparams(params)).scalars()
+            rows = reeults.all() if fetching_all else reeults.first()
+            
+            return rows
+            
     except Exception as e:
         print("Connection Failed")
         print(e)
         return None
+    
+    
+def createItem(table: BaseModel, item: BaseSchema, session:Session) -> BaseModel | None:
+    if not session.is_active: return None
+    
+    try:
+        return session.execute(
+            insert(table).returning(table),
+            [item.dict()]
+        ).scalars().first()
+    
+    except Exception as e:
+        print(e)
+        return None
 
-def setConnection():
-    if not USE_ORM: 
-        return PostgresDB(connect_url=FASTAPI_TUT_DATABASE_URL)
-    engine = create_engine(
-        url=FASTAPI_TUT_DATABASE_URL, echo=True
-    )
+def readAllItem(table: BaseModel, session: Session) -> Sequence | None:
+    try:
+        results = session.execute(
+            select(table).order_by(table.id)
+        ).scalars().all()
+        
+        if len(results) == 0:
+            return None
+        else:
+            return results
+            
+    except Exception as e:
+        print(e)
+        return None
     
-    models.BaseModel.metadata.create_all(engine)
+def readItemById(table: BaseModel, item_id, session: Session)-> BaseModel | None:
+    try:
+        return session.execute(
+            select(table).where(table.id == item_id)
+        ).scalars().first()
+        
+    except Exception as e:
+        print(e)
+        return None
     
-    SessionLocal = sessionmaker(engine, autoflush=False,autobegin=False)
+def updateItemById(table: BaseModel, item_id, set_values:dict, session: Session)-> BaseModel | None:
+    try:
+        return session.execute(
+            update(table)
+            .where(table.id == item_id)
+            .values(set_values)
+            .returning(table)
+        ).scalars().first()
+            
+    except Exception as e:
+        print(e)
+        return None
     
-    return SessionLocal
-
+def deleteItemById(table: BaseModel, item_id, session: Session)-> BaseModel | None:
+    try:
+        return session.execute(
+            delete(table)
+            .where(table.id == item_id)
+            .returning(table)
+        ).scalars().first()
+            
+    except Exception as e:
+        print(e)
+        return None
+        
 if __name__ == "__main__":
-    db = setConnection()
-    # posts = db.execute("""
-    #     SELECT * FROM "Posts"
-    # """, fetching_all=False)
+    # db = setConnection()
+    # # posts = db.execute("""
+    # #     SELECT * FROM "Posts"
+    # # """, fetching_all=False)
  
-    posts = db.execute(
-        select(models.Post)
-    )
-    print(posts)
+    # posts = db.execute(
+    #     select(models.Post)
+    # )
+    # print(posts)
+    ...

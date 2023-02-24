@@ -7,20 +7,10 @@ from sqlalchemy.orm import Session
 import schemas
 import models
 from app import database, crud
- 
-def notFoundException(id): 
-    return HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail=[{
-            "loc": [
-                "path",
-                "post_id"
-            ],
-            "msg": f"Post with post_d={id} does not exists or ID our of range"
-        }],           
-    )
+
+from config import FASTAPI_TUT_DATABASE_URL
    
-connection =  database.Connection()
+connection =  database.Connection(FASTAPI_TUT_DATABASE_URL)
 
 app = FastAPI()
 
@@ -72,17 +62,6 @@ def read_posts(post_id: int, db: Session = Depends(connection)):
     
     return {"data": results}
 
-@app.delete("/posts/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_posts(post_id: int, db: Session = Depends(connection)):
-    deleted_post = crud.deleteItemById(
-        table=models.Post,item_id=post_id, session=db
-    )
-    
-    if not deleted_post:
-        raise notFoundException(post_id)
-    
-    return 
-
 @app.put("/postLikes/{post_id}")
 def update_postLikes(post_id: int, dislike: bool = False, db: Session = Depends(connection)):
     results = crud.updateItemById(**{
@@ -98,6 +77,31 @@ def update_postLikes(post_id: int, dislike: bool = False, db: Session = Depends(
 
     return {"data": [results]}
 
+@app.delete("/posts/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_posts(post_id: int, db: Session = Depends(connection)):
+    deleted_post = crud.deleteItemById(
+        table=models.Post,item_id=post_id, session=db
+    )
+    
+    if not deleted_post:
+        raise notFoundException(post_id)
+    
+    return 
+
+### Helper Functions
+
+def notFoundException(id): 
+    """ return Not Found Exception to client side"""
+    return HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail=[{
+            "loc": [
+                "path",
+                "post_id"
+            ],
+            "msg": f"Post with post_d={id} does not exists or ID our of range"
+        }],           
+    )
 
 def main(db:Session = Depends(connection)):
     # posts = db.execute(
