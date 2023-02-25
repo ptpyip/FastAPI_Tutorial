@@ -1,5 +1,5 @@
 from typing import List, Optional
-from sqlalchemy import String, ForeignKey, Column
+from sqlalchemy import Column, ForeignKey
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import func
@@ -21,11 +21,14 @@ class Post(BaseModel):
     def __repr__(self) -> str:
         return f"Post(id={self.id!r}, title={self.title!r}, is_published={self.is_published!r}, likes={self.likes!r}, content={self.content!r})"
 
-    # def getDict(self):
-    #     return  {
-    #         "post_id": self.post_id,
-    #         "title": self.title,
-    #         "is_publised": self.is_publised,
-    #         "likes": self.likes,
-    #         "content": self.content
-    #     }
+class User(BaseModel):
+    __tablename__ = "Users"
+    
+    email: Mapped[str] = mapped_column(unique=True)
+    hashed_pwd: Mapped[str]
+    display_name: Mapped[str]
+    url_to_display_img: Mapped[Optional[str]]
+    created_at = Column(types.TIMESTAMP(timezone=True), nullable=False, server_default=func.current_timestamp())
+    
+    
+    

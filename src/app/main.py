@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 import schemas
 import models
-from app import database, crud
+from app import database
 
 from config import FASTAPI_TUT_DATABASE_URL
    
@@ -18,15 +18,17 @@ app = FastAPI()
 async def root():
     return {"message": "Hi!"}
 
+### Operation on Posts
+
 @app.post("/posts", 
           status_code=status.HTTP_201_CREATED, response_model=schemas.PostResponse)
 def create_post(payload: schemas.Post, db: Session = Depends(connection)):  
     
-    result = crud.createItem(
+    results = database.createItem(
         table=models.Post,item=payload,session=db
     )
     
-    if not result:
+    if not results:
         return HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=[{
@@ -34,11 +36,11 @@ def create_post(payload: schemas.Post, db: Session = Depends(connection)):
             }],           
         )
         
-    return result
+    return results
 
 @app.get("/posts", response_model=List[schemas.PostResponse])
 def read_all_posts(db: Session = Depends(connection)):
-    results = crud.readAllItem(table=models.Post, session=db)
+    results = database.readAllItem(table=models.Post, session=db)
     
     if not results:
         return HTTPException(
@@ -53,18 +55,20 @@ def read_all_posts(db: Session = Depends(connection)):
 @app.get("/posts/{post_id}")
 def read_posts(post_id: int, db: Session = Depends(connection)):
     # validateAndGetPost(post_id)
-    results = crud.readItemById(
-        table=models.Post,item_id=post_id, session=db
+    results = database.readItemById(
+        table=models.Post, item_id=post_id, session=db
     )
     
     if not results:
-        raise notFoundException(post_id)
+        raise notFoundException(
+            msg=f"Post with post_id={post_id} does not exists or ID our of range"
+        )
     
     return {"data": results}
 
 @app.put("/postLikes/{post_id}")
 def update_postLikes(post_id: int, dislike: bool = False, db: Session = Depends(connection)):
-    results = crud.updateItemById(**{
+    results = database.updateItemById(**{
         "table": models.Post,
         "item_id": post_id,
         "set_values": {
@@ -73,33 +77,54 @@ def update_postLikes(post_id: int, dislike: bool = False, db: Session = Depends(
     }, session=db)
 
     if not results:
-        raise notFoundException(post_id)
+        raise notFoundException(
+            msg=f"Post with post_id={post_id} does not exists or ID our of range"
+        )
 
     return {"data": [results]}
 
 @app.delete("/posts/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_posts(post_id: int, db: Session = Depends(connection)):
-    deleted_post = crud.deleteItemById(
+    results = database.deleteItemById(
         table=models.Post,item_id=post_id, session=db
     )
     
-    if not deleted_post:
-        raise notFoundException(post_id)
+    if not results:
+        raise notFoundException(
+            msg=f"Post with post_id={post_id} does not exists or ID our of range"
+        )
     
     return 
 
+### Operation on Users
+
+@app.post("/users", status_code=status.HTTP_201_CREATED)
+def create_user(payload: schemas.UserCreate, db: Session = Depends(connection)):
+    results = database.createItem(
+        table=models.User,item=payload, session=db
+    )
+    
+    if not results:
+        return HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=[{
+                "msg": f"Post creation fail"
+            }],           
+        )
+
+    return results
 ### Helper Functions
 
-def notFoundException(id): 
+def notFoundException(msg): 
     """ return Not Found Exception to client side"""
     return HTTPException(
         status_code=status.HTTP_404_NOT_FOUND,
         detail=[{
             "loc": [
                 "path",
-                "post_id"
+                "id"
             ],
-            "msg": f"Post with post_d={id} does not exists or ID our of range"
+            "msg": msg
         }],           
     )
 
