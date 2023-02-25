@@ -28,11 +28,12 @@ class User(BaseSchema):
     
 class UserIn(BaseSchema):
     email: EmailStr
-    hashed_pwd: str
+    input_pwd: str
     display_name: str
     url_to_display_img: Optional[str] = None
     
 class Userout(BaseSchema):
+    id: int
     email: EmailStr
     display_name: str
     url_to_display_img: Optional[str] = None

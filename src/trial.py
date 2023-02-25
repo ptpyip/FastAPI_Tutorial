@@ -11,10 +11,12 @@ class SubClass(SuperClass):
         self.id = id
         pass
     
-super_class = SuperClass()
-print(super_class.sub.id)
+# super_class = SuperClass()
+# print(super_class.sub.id)
+
 
 if __name__ == "__main__":
-    a = {}
-    print(tuple(a.values()))
-    
+    a = {"a": "a"}
+    b = {'b': "b"}
+    print(a|b)
+        

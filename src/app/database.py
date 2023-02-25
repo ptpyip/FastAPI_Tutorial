@@ -82,13 +82,13 @@ def execute(db: Session | Cursor, query, params=Optional[dict], fetching_all=Tru
         return None
     
     
-def createItem(table: BaseModel, item: BaseSchema, session:Session) -> BaseModel | None:
+def createItem(table: BaseModel, item: dict, session:Session) -> BaseModel | None:
     if not session.is_active: return None
     
     try:
         return session.execute(
             insert(table).returning(table),
-            [item.dict()]
+            [item]
         ).scalars().first()
     
     except Exception as e:

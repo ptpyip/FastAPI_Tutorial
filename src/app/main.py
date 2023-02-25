@@ -1,15 +1,15 @@
 from typing import List
 
 from fastapi import FastAPI, HTTPException, Depends, status
-from sqlalchemy import select, insert, update, delete
 from sqlalchemy.orm import Session
 
 import schemas
 import models
-from app import database
+from app import database, utils
 
 from config import FASTAPI_TUT_DATABASE_URL
-   
+
+### Initialization
 connection =  database.Connection(FASTAPI_TUT_DATABASE_URL)
 
 app = FastAPI()
@@ -25,7 +25,7 @@ async def root():
 def create_post(payload: schemas.Post, db: Session = Depends(connection)):  
     
     results = database.createItem(
-        table=models.Post,item=payload,session=db
+        table=models.Post,item=payload.dict(),session=db
     )
     
     if not results:
@@ -98,10 +98,14 @@ def delete_posts(post_id: int, db: Session = Depends(connection)):
 
 ### Operation on Users
 
-@app.post("/users", status_code=status.HTTP_201_CREATED)
-def create_user(payload: schemas.UserCreate, db: Session = Depends(connection)):
+@app.post("/users", status_code=status.HTTP_201_CREATED, response_model=schemas.Userout)
+def create_user(payload: schemas.UserIn, db: Session = Depends(connection)):
+    hashed_pwd = utils.hashPassword(payload.input_pwd)
+    
     results = database.createItem(
-        table=models.User,item=payload, session=db
+        table=models.User,
+        item=payload.dict(exclude={"input_pwd"}) | {"hashed_pwd": hashed_pwd}, 
+        session=db
     )
     
     if not results:
