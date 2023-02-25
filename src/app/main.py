@@ -53,7 +53,7 @@ def read_all_posts(db: Session = Depends(connection)):
     return {"data": results}
     
 @app.get("/posts/{post_id}")
-def read_posts(post_id: int, db: Session = Depends(connection)):
+def read_post(post_id: int, db: Session = Depends(connection)):
     # validateAndGetPost(post_id)
     results = database.readItemById(
         table=models.Post, item_id=post_id, session=db
@@ -118,6 +118,20 @@ def create_user(payload: schemas.UserIn, db: Session = Depends(connection)):
 
     return results
 ### Helper Functions
+
+@app.get("/users/{user_id}")
+def read_user(user_id: int, db: Session = Depends(connection)):
+    # validateAndGetPost(post_id)
+    results = database.readItemById(
+        table=models.User, item_id=user_id, session=db
+    )
+    
+    if not results:
+        raise notFoundException(
+            msg=f"User with user_id={user_id} does not exists or ID our of range"
+        )
+    
+    return {"data": results}
 
 def notFoundException(msg): 
     """ return Not Found Exception to client side"""
