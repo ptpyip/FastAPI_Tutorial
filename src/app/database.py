@@ -37,7 +37,7 @@ class Connection():
             with db.begin():
                 yield db
                 
-class DeirectConnection(Connection):
+class DirectConnection(Connection):
     connect_url:str 
     
     def __init__(self, db_url) -> None:
