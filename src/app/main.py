@@ -3,8 +3,9 @@ from typing import List
 from fastapi import FastAPI, HTTPException, Depends, status
 from sqlalchemy.orm import Session
 
-import schemas
 import models
+import schemas
+import views
 from app import database, utils
 
 from config import FASTAPI_TUT_DATABASE_URL
@@ -21,7 +22,7 @@ async def root():
 ### Operation on Posts
 
 @app.post("/posts", 
-          status_code=status.HTTP_201_CREATED, response_model=schemas.PostResponse)
+          status_code=status.HTTP_201_CREATED, response_model=views.PostDisplay)
 def create_post(payload: schemas.Post, db: Session = Depends(connection)):  
     
     results = database.createItem(
@@ -29,7 +30,7 @@ def create_post(payload: schemas.Post, db: Session = Depends(connection)):
     )
     
     if not results:
-        return HTTPException(
+        raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=[{
                 "msg": f"Post creation fail"
@@ -38,21 +39,21 @@ def create_post(payload: schemas.Post, db: Session = Depends(connection)):
         
     return results
 
-@app.get("/posts", response_model=List[schemas.PostResponse])
+@app.get("/posts", response_model=List[views.PostDisplay])
 def read_all_posts(db: Session = Depends(connection)):
     results = database.readAllItem(table=models.Post, session=db)
     
     if not results:
-        return HTTPException(
+        raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=[{
-            "msg": f"No post exist",
-            "data": results
-        }],           
+                "msg": f"No post exist",
+                "data": results
+            }],           
         )
-    return {"data": results}
+    return results
     
-@app.get("/posts/{post_id}")
+@app.get("/posts/{post_id}", response_model=views.PostDisplay)
 def read_post(post_id: int, db: Session = Depends(connection)):
     # validateAndGetPost(post_id)
     results = database.readItemById(
@@ -63,10 +64,10 @@ def read_post(post_id: int, db: Session = Depends(connection)):
         raise notFoundException(
             msg=f"Post with post_id={post_id} does not exists or ID our of range"
         )
-    
-    return {"data": results}
+        
+    return results
 
-@app.put("/postLikes/{post_id}")
+@app.put("/postLikes/{post_id}", response_model=views.PostDisplay)
 def update_postLikes(post_id: int, dislike: bool = False, db: Session = Depends(connection)):
     results = database.updateItemById(**{
         "table": models.Post,
@@ -81,7 +82,7 @@ def update_postLikes(post_id: int, dislike: bool = False, db: Session = Depends(
             msg=f"Post with post_id={post_id} does not exists or ID our of range"
         )
 
-    return {"data": [results]}
+    return results
 
 @app.delete("/posts/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_posts(post_id: int, db: Session = Depends(connection)):
@@ -98,8 +99,8 @@ def delete_posts(post_id: int, db: Session = Depends(connection)):
 
 ### Operation on Users
 
-@app.post("/users", status_code=status.HTTP_201_CREATED, response_model=schemas.Userout)
-def create_user(payload: schemas.UserIn, db: Session = Depends(connection)):
+@app.post("/users", status_code=status.HTTP_201_CREATED, response_model=views.UserInfo)
+def create_user(payload: schemas.User, db: Session = Depends(connection)):
     hashed_pwd = utils.hashPassword(payload.input_pwd)
     
     results = database.createItem(
@@ -109,7 +110,7 @@ def create_user(payload: schemas.UserIn, db: Session = Depends(connection)):
     )
     
     if not results:
-        return HTTPException(
+        raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=[{
                 "msg": f"Post creation fail"
@@ -119,7 +120,7 @@ def create_user(payload: schemas.UserIn, db: Session = Depends(connection)):
     return results
 ### Helper Functions
 
-@app.get("/users/{user_id}")
+@app.get("/users/{user_id}", response_model=views.UserInfo)
 def read_user(user_id: int, db: Session = Depends(connection)):
     # validateAndGetPost(post_id)
     results = database.readItemById(
@@ -131,7 +132,7 @@ def read_user(user_id: int, db: Session = Depends(connection)):
             msg=f"User with user_id={user_id} does not exists or ID our of range"
         )
     
-    return {"data": results}
+    return results
 
 def notFoundException(msg): 
     """ return Not Found Exception to client side"""
