@@ -1,11 +1,11 @@
 
-from typing import Any, Optional, Sequence
+from typing import Any, Optional, Sequence, List
 
 import psycopg
 from psycopg import Cursor
 from psycopg.rows import dict_row
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, Column
 from sqlalchemy import text, select, insert, update, delete
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, sessionmaker
@@ -62,7 +62,7 @@ class DirectConnection(Connection):
             return None
         
 
-def execute(db: Session | Cursor, query, params=Optional[dict], fetching_all=True):
+def execute(db: Session | Cursor, query, params=Optional[dict], fetching_all=False):
     try:
         if isinstance(db, Cursor):
             db.execute(query, tuple(params.values()))
@@ -109,12 +109,33 @@ def readAllItem(table: BaseModel, session: Session) -> Sequence | None:
     except Exception as e:
         print(e)
         return None
-    
+
+def readItems(table: BaseModel, session: Session, column:Optional[Column]=None, filters: Optional[List]=None, fetching_all=False):
+    query = select(table) if (column is None) else select(column) 
+    for query_filter in filters:
+        query = query.where(query_filter)
+        
+    try:
+        results = session.execute(
+            query
+        ).scalars()
+                
+        return results.all() if fetching_all else results.first()
+        
+    except Exception as e:
+        print(e)
+        return None
+       
 def readItemById(table: BaseModel, item_id, session: Session)-> BaseModel | None:
     try:
-        return session.execute(
-            select(table).where(table.id == item_id)
-        ).scalars().first()
+        # return session.execute(
+        #     select(table).where(table.id == item_id)
+        # ).scalars().first()
+        return readItems(
+            table=table,
+            filters=[table.id == item_id],
+            session=session
+        )
         
     except Exception as e:
         print(e)
@@ -144,6 +165,8 @@ def deleteItemById(table: BaseModel, item_id, session: Session)-> BaseModel | No
     except Exception as e:
         print(e)
         return None
+    
+# def authenticateUser(username: str, password: str, session: Session):
         
 if __name__ == "__main__":
     # db = setConnection()

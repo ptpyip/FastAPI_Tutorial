@@ -5,8 +5,7 @@ from sqlalchemy.orm import Session
 
 import models
 import schemas
-import views
-from app import database, utils
+from app import database, utils, security
 
 from config import FASTAPI_TUT_DATABASE_URL
 
@@ -21,9 +20,9 @@ router = APIRouter(
 ### Operation on Users
 
 @router.post("/", 
-             status_code=status.HTTP_201_CREATED, response_model=views.UserInfo)
-def create_user(payload: schemas.User, db: Session = Depends(connection)):
-    hashed_pwd = utils.hashPassword(payload.input_pwd)
+             status_code=status.HTTP_201_CREATED, response_model=schemas.UserInfoView)
+def create_user(payload: schemas.UserCreate, db: Session = Depends(connection)):
+    hashed_pwd = security.hashPassword(payload.input_pwd)
     
     results = database.createItem(
         table=models.User,
@@ -42,7 +41,7 @@ def create_user(payload: schemas.User, db: Session = Depends(connection)):
     return results
 ### Helper Functions
 
-@router.get("/{user_id}", response_model=views.UserInfo)
+@router.get("/{user_id}", response_model=schemas.UserProfile)
 def read_user(user_id: int, db: Session = Depends(connection)):
     # validateAndGetPost(post_id)
     results = database.readItemById(

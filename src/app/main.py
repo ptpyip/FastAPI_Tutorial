@@ -1,19 +1,14 @@
-from typing import List
-
-from fastapi import FastAPI, HTTPException, Depends, status
-from sqlalchemy.orm import Session
+from fastapi import FastAPI
 
 from app import database, utils
-from .routers import post, user
-
-from config import FASTAPI_TUT_DATABASE_URL
+from .routers import auth, post, user
 
 ### Initialization
-connection =  database.Connection(FASTAPI_TUT_DATABASE_URL)
 
 app = FastAPI()
 app.include_router(post.router)
 app.include_router(user.router)
+app.include_router(auth.router)
 
 @app.get("/")
 async def root():

@@ -76,9 +76,28 @@ class Item(BaseModel):      # create a pydantic model for FastAPI Schema
             )
    ``` 
 
-  #### 7. Dependency Injection
+#### 7. Dependency Injection
 
-2. Raise an exception with custom exception handlers
+1. Raise an exception with custom exception handlers
+
+#### 8. API Routers
+- The way to separate routes with the same prefixes in to one module
+  -> allow code separation 
+
+```python
+# item.py
+
+router = APIRouter(
+    prefix="/item",
+    tags=["Items"]
+)
+''' turn app into router'''
+
+# main.py
+app.include_router(item.router)
+app.include_router(user.router)
+
+``` 
 
 ### Part II: Database in Python
 #### 1. Connect to Postgres DB 
@@ -275,6 +294,25 @@ class Item(BaseModel):      # create a pydantic model for FastAPI Schema
 
 
 ### Part III: Backend Basic
+
+#### 1. Hasing user passward
+```python
+
+  from passlib.context import CryptContext
+  pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+  def hashPassword(pwd: str):
+      return pwd_context.hash(pwd)
+```
+
+#### 2. JWT Token Authentication
+- an alternative way to Session-based authentication (statefull)
+- JSON Web Tokens (JWT)is a standard for creating access tokens that can be used for stateless authentication and authorization. 
+- A client sends a token in the request headers, 
+  and the server verifies the token's signature to authenticate the user. 
+- can be configured with expiration times and can carry user roles and permissions.
+
+1. login(credentials) -> Token
 
 ### Part IV: Deployment -- Microservices
 
