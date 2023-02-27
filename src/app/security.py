@@ -8,6 +8,12 @@ from jose import JWTError, jwt
 from config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, TOKEN_URL
 import schemas , utils
 
+from config import SecuritySettings, TOKEN_URL
+
+settings = SecuritySettings()
+SECRET_KEY = settings.SECRET_KEY
+ALGORITHM = settings.ALGORITHM
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
 
 ### hash password
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
