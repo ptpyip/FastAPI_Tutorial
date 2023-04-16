@@ -16,7 +16,5 @@ class SubClass(SuperClass):
 
 
 if __name__ == "__main__":
-    a = {"a": "a"}
-    b = {'b': "b"}
-    print(a|b)
+    ...
         
